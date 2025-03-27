@@ -1,0 +1,347 @@
+/*******************************************************************************
+* File Name:   main.c
+*
+* Description: This is the source code for the Class-B Safety test code
+*              example for TCPWM block, for ModusToolbox.
+*
+* Related Document: See README.md
+*
+*
+*******************************************************************************
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+*
+* This software, including source code, documentation and related
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
+* worldwide patent protection (United States and foreign),
+* United States copyright laws and international treaty provisions.
+* Therefore, you may use this Software only as provided in the license
+* agreement accompanying the software package from which you
+* obtained this Software ("EULA").
+* If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
+* non-transferable license to copy, modify, and compile the Software
+* source code solely for use in connection with Cypress's
+* integrated circuit products.  Any reproduction, modification, translation,
+* compilation, or representation of this Software except as specified
+* above is prohibited without the express written permission of Cypress.
+*
+* Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
+* reserves the right to make changes to the Software without notice. Cypress
+* does not assume any liability arising out of the application or use of the
+* Software or any product or circuit described in the Software. Cypress does
+* not authorize its products for use in any products where a malfunction or
+* failure of the Cypress product may reasonably be expected to result in
+* significant property damage, injury or death ("High Risk Product"). By
+* including Cypress's product in a High Risk Product, the manufacturer
+* of such system or application assumes all risk of such use and in doing
+* so agrees to indemnify Cypress against all liability.
+*******************************************************************************/
+
+
+/*******************************************************************************
+* Header Files
+*******************************************************************************/
+
+#include "cy_pdl.h"
+#include "cybsp.h"
+#include "cy_retarget_io.h"
+#include "mtb_hal.h"
+#include "SelfTest.h"
+#include <math.h>
+
+/*******************************************************************************
+* Macros
+*******************************************************************************/
+
+/* UART timeout in milliseconds */
+#define UART_TIMEOUT_MS (10u)
+
+/* Available commands */
+#define SELFTEST_CMD_TIMER         ('1')
+#define SELFTEST_CMD_PWM           ('2')
+#define SELFTEST_CMD_PWM_GATE_KILL ('3')
+
+/* Pins for self test*/
+#define PWM_IN_PIN_PORT    NULL
+#define PWM_IN_PIN_NUM     0u
+
+/*******************************************************************************
+* Global Variables
+*******************************************************************************/
+
+/* For the Retarget -IO (Debug UART) usage */
+static cy_stc_scb_uart_context_t    DEBUG_UART_context;           /** UART context */
+static mtb_hal_uart_t               DEBUG_UART_hal_obj;           /** Debug UART HAL object  */
+
+/* Variable for storing PWM status */
+cy_en_tcpwm_status_t api_status;
+
+/* Variable for storing low-power comparator context */
+static cy_stc_lpcomp_context_t context;
+
+/* Variable to store the input command from UART*/
+uint8_t cmd;
+
+/*******************************************************************************
+* Function Prototypes
+*******************************************************************************/
+
+/* Prototypes of test functions */
+void timer_test(void);
+void pwm_test(void);
+void pwm_gate_kill(void);
+
+/*******************************************************************************
+* Function Definitions
+*******************************************************************************/
+
+/*******************************************************************************
+* Function Name: main
+********************************************************************************
+* Summary:
+* This is the main function. It performs Class-B safety test for TCPMW block.
+* SelfTest is performed for Timer/Counter, PWM and PWM gate Kill based on the
+* user command.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  int
+*
+*******************************************************************************/
+int main(void)
+{
+    cy_rslt_t result;
+
+#if defined (CY_DEVICE_SECURE)
+    cyhal_wdt_t wdt_obj;
+
+    /* Clear watchdog timer so that it doesn't trigger a reset */
+    result = cyhal_wdt_init(&wdt_obj, cyhal_wdt_get_max_timeout_ms());
+    CY_ASSERT(CY_RSLT_SUCCESS == result);
+    cyhal_wdt_free(&wdt_obj);
+#endif
+
+    /* Initialize the device and board peripherals */
+    result = cybsp_init();
+
+    /* Board init failed. Stop program execution */
+    if (result != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
+    /* Enable global interrupts */
+    __enable_irq();
+
+    /* Debug UART init */
+    result = (cy_rslt_t)Cy_SCB_UART_Init(DEBUG_UART_HW, &DEBUG_UART_config, &DEBUG_UART_context);
+
+    /* UART init failed. Stop program execution */
+    if (result != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
+    /*Debug UART enable*/
+    Cy_SCB_UART_Enable(DEBUG_UART_HW);
+
+    /* Setup the HAL UART */
+    result = mtb_hal_uart_setup(&DEBUG_UART_hal_obj, &DEBUG_UART_hal_config, &DEBUG_UART_context, NULL);
+
+    /* HAL UART init failed. Stop program execution */
+    if (result != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
+    /* Initializes redirecting of low-level I/O. */
+    result = cy_retarget_io_init(&DEBUG_UART_hal_obj);
+
+    /* HAL retarget_io init failed. Stop program execution */
+    if (result != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
+    /* \x1b[2J\x1b[;H - ANSI ESC sequence for clear screen */
+    printf("\x1b[2J\x1b[;H");
+
+    printf("****************** "
+           "CLass-B: TCPWM SAFETY TEST "
+           "****************** \r\n\n");
+
+    /* Display available commands */
+    printf("Available commands \r\n");
+    printf("1 : Run SelfTest for Timer/ Counter\r\n");
+    printf("2 : Run SelfTest for PWM\r\n");
+    printf("3 : Run SelfTest for PWM Gate Kill\r\n\n");
+
+    for (;;)
+    {
+        /* Storing the data send from the terminal through UART in cmd */
+        result = mtb_hal_uart_get(&DEBUG_UART_hal_obj, &cmd, UART_TIMEOUT_MS);
+
+        /* check for timeout if data is not received*/
+        if (result != MTB_HAL_UART_RSLT_ERR_CSP_UART_GETC_TIMEOUT)
+        {
+            if (SELFTEST_CMD_TIMER == cmd)
+            {
+                printf("\r\n[Command] : Run SelfTest for Timer/ Counter\r\n");
+                timer_test();
+            }
+            else if (SELFTEST_CMD_PWM == cmd)
+            {
+                printf("\r\n[Command] : Run SelfTest for PWM\r\n");
+                pwm_test();
+            }
+            else if (SELFTEST_CMD_PWM_GATE_KILL == cmd)
+            {
+                printf("\r\n[Command] : Run SelfTest for PWM Gate Kill\r\n");
+                pwm_gate_kill();
+            }
+            else
+            {
+                printf("\r\nEnter a valid command\r\n");
+            }
+        }
+
+    }
+}
+
+/*******************************************************************************
+* Function Name: timer_test
+********************************************************************************
+* Summary:
+* This function creates configures the block to timer/counter personality.
+* The test verifies, if the counter is incrementing the count value, and the
+* count value falls within the expected thresholds.
+*
+* Parameters:
+*  none
+*
+* Return :
+*  void
+*
+*******************************************************************************/
+void timer_test(void)
+{
+    /* Initialize the TCPWM for timer/counter test. */
+    SelfTest_Timer_Counter_init(CYBSP_TIMER_COUNTER_TEST_HW,
+                                CYBSP_TIMER_COUNTER_TEST_NUM,
+                                &CYBSP_TIMER_COUNTER_TEST_config,
+                                (IRQn_Type)CYBSP_TIMER_COUNTER_TEST_IRQ);
+    /* Run Timer/Counter Self Test... */
+    if (OK_STATUS != SelfTest_Counter_Timer())
+    {
+        /* Process error */
+        printf("Error: Timer Counter fail\r\n");
+    }
+    else
+    {
+        printf("Success: Timer Counter pass\r\n");
+    }
+}
+
+/*******************************************************************************
+* Function Name: pwm_test
+********************************************************************************
+* Summary:
+* The function configures a 32-bit PWM to run at 1/3 duty ON, 2/3 OFF duty cycle
+* with a 1 millisecond period, and then start the PWM. The CPU is then run in a
+* loop for 5 milliseconds and the output is polled continuously in the loop.
+* The instances of `0` (low) and `1` (high) are counted. The on/off ratio is
+* then calculated and checked if it falls within the expected thresholds.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  void
+*******************************************************************************/
+void pwm_test(void)
+{
+    /*Initialize the TCPWM for PWM test. If init failed disable global interrupts */
+    if (SelfTest_PWM_init(CYBSP_PWM_HW, CYBSP_PWM_NUM, &CYBSP_PWM_config,
+            (IRQn_Type)CYBSP_PWM_IRQ) != 0)
+    {
+        __disable_irq();
+    }
+
+    /* Run PWM Self Test... */
+    if (OK_STATUS != SelfTest_PWM(PWM_IN_PIN_PORT, PWM_IN_PIN_NUM))
+    {
+        /* Process error */
+        printf("Error: PWM fail\r\n");
+        printf("Ensure PWM_IN_PIN is connected to PWM line -"
+                " Refer Hardware setup section in Readme\r\n");
+    }
+    else
+    {
+        /* Process success */
+        printf("Success: PWM pass\r\n");
+    }
+}
+
+/*******************************************************************************
+* Function Name: pwm_gate_kill
+********************************************************************************
+* Summary:
+* The function configures Kill mode of the TCPWM block as `Stop on Kill. The
+* low-power comparator output is routed to the Kill signal of TCPWM indicating
+* overvoltage/overcurrent condition if the voltage on the positive terminal is
+* greater than the voltage on the negative terminal. If an overvoltage or
+* overcurrent condition occurs, then it will Kill the PWM output. The TCPWM base
+* and CntNum are passed to check whether the counter is stopped or not. If the
+* counter is not incrementing/decrementing, the PWM output is inactive that the
+* PWM is killed.
+*
+* Parameters:
+*  none
+*
+* Return:
+*  void
+*******************************************************************************/
+void pwm_gate_kill(void)
+{
+    /* Initializes low-power comparator */
+    Cy_LPComp_Init_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &LPCOMP_config,&context);
+
+    /* Configure the TCPWM for PWM operation. */
+     api_status = Cy_TCPWM_PWM_Init(CYBSP_PWM_GATEKILL_HW,
+             CYBSP_PWM_GATEKILL_NUM, &CYBSP_PWM_GATEKILL_config);
+
+     /* TCPWM init failed. Disable the global interrupt */
+    if( api_status != CY_TCPWM_SUCCESS)
+    {
+        __disable_irq();
+    }
+
+    /* TCPWM enable */
+    Cy_TCPWM_PWM_Enable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
+
+    /* Apply higher voltage to the LPCOMP +ve pin, will kill the PWM */
+    Cy_LPComp_Enable_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &context);
+
+    /* Run PWM GateKill Self Test... */
+    if (OK_STATUS != SelfTest_PWM_GateKill(CYBSP_PWM_GATEKILL_HW,
+            CYBSP_PWM_GATEKILL_NUM))
+    {
+        /* Process error */
+        printf("Error: PWM GateKill fail\r\n");
+        printf("Ensure LPCOMP +ve pin is connected to VCC -"
+                " Refer Hardware setup section in Readme\r\n");
+    }
+    else
+    {
+        /* Process success */
+        printf("Success: PWM GateKill pass\r\n");
+    }
+}
+
+/* [] END OF FILE */
+
