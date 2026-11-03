@@ -1,32 +1,74 @@
 # Class-B Safety Test for PSOC&trade; Control MCU: TCPWM peripherals
 
-This code example demonstrates the usage of the Class-B Safety Test Library to test the TCPWM resource configured as a timer/counter, PWM, and PWM output gate kill in PSOC&trade; Control C3 MCUs. The example verifies the proper operation and accuracy of these peripherals adhering to the IEC 60730 standards.
+This code example demonstrates the usage of the Class-B Safety Test Library to
+test the TCPWM resource configured as a timer/counter, PWM, and PWM output gate
+kill in PSOC&trade; Control C3 MCUs. The example verifies the proper operation
+and accuracy of these peripherals adhering to the IEC 60730 standards.
 
+Name | Vanity URL
+-----|-----------
+**Getting started documents** |
+ModusToolbox&trade; tools package installation guide| https://www.infineon.com/ModusToolboxInstallguide
+ModusToolbox&trade; tools package release notes| https://www.infineon.com/ModusToolboxReleaseNotes
+ModusToolbox&trade; tools package quick start guide | https://www.infineon.com/ModusToolboxQSG
+ModusToolbox&trade; tools package user guide| https://www.infineon.com/ModusToolboxUserguide
+**IDE documents** |
+Eclipse IDE for ModusToolbox&trade; user guide | https://www.infineon.com/MTBEclipseIDEUserguide
+Visual Studio Code for ModusToolbox&trade; user guide | https://www.infineon.com/MTBVSCodeUserGuide
+Arm&reg; Keil&reg; µVision&reg; for ModusToolbox&trade; user guide | https://www.infineon.com/MTBuVisionUserGuide
+IAR Embedded Workbench for ModusToolbox&trade; user guide | https://www.infineon.com/MTBIARUserGuide
+Configurators and tools |
+**General tools** |
+ModusToolbox&trade; Dashboard user guide | https://www.infineon.com/ModusToolboxDashboard
+ModusToolbox&trade; Project Creator user guide | https://www.infineon.com/ModusToolboxProjectCreator
+ModusToolbox&trade; Library Manager user guide | https://www.infineon.com/ModusToolboxLibraryManager
+ModusToolbox&trade; BSP Assistant user guide | https://www.infineon.com/ModusToolboxBSPAssistant
+ModusToolbox&trade; LCS Manager CLI user guide | https://www.infineon.com/ModusToolboxLCSManager
+**BSP configurators** |
+ModusToolbox&trade; Device Configurator user guide| https://www.infineon.com/ModusToolboxDeviceConfig
+ModusToolbox&trade; CAPSENSE&trade; Configurator user guide | https://www.infineon.com/ModusToolboxCapSenseConfig
+ModusToolbox&trade; CAPSENSE&trade; Tuner user guide | https://www.infineon.com/ModusToolboxCapSenseTuner
+ModusToolbox&trade; QSPI Configurator user guide | https://www.infineon.com/ModusToolboxQSPIConfig
+ModusToolbox&trade; Smart I/O Configurator user guide | https://www.infineon.com/ModusToolboxSmartIOConfig
+**Library configurators** |
+ModusToolbox&trade; Bluetooth&reg; Configurator user guide | https://www.infineon.com/ModusToolboxBLEConfig
+ModusToolbox&trade; EZ-PD&trade; Configurator user guide | https://www.infineon.com/ModusToolboxEZ-PDConfig
+ModusToolbox&trade; LIN Configurator user guide | https://www.infineon.com/ModusToolboxLINConfig
+ModusToolbox&trade; Secure Policy Configurator user guide | https://www.infineon.com/ModusToolboxSecurePolicyConfig
+ModusToolbox&trade; Segment LCD Configurator user guide | https://www.infineon.com/ModusToolboxSegLCDConfig
+ModusToolbox&trade; USB Configurator user guide | https://www.infineon.com/ModusToolboxUSBConfig
+**MCU tools** |
+ModusToolbox&trade; Device Firmware Update Host tool guide | https://www.infineon.com/ModusToolboxDFUHostTool
+**Webpage Links** |
+ModusToolbox&trade; product page | https://www.infineon.com/ModusToolbox
+ModusToolbox&trade; Video Hub | https://www.infineon.com/ModusToolboxVideos
+ModusToolbox&trade; Latest Community Announcement Post | https://www.infineon.com/ModusToolboxReleaseAnnouncement
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce241078-safety-tcpwm-test)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDEwNzgiLCJTcGVjIE51bWJlciI6IjAwMi00MTA3OCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgU2FmZXR5IFRlc3QgZm9yIFBTT0MmdHJhZGU7IENvbnRyb2wgTUNVOiBUQ1BXTSBwZXJpcGhlcmFscyIsInJpZCI6ImpoYXdhciIsIkRvYyB2ZXJzaW9uIjoiMS4wLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://yourvoice.infineon.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDEwNzgiLCJTcGVjIE51bWJlciI6IjAwMi00MTA3OCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgU2FmZXR5IFRlc3QgZm9yIFBTT0MmdHJhZGU7IENvbnRyb2wgTUNVOiBUQ1BXTSBwZXJpcGhlcmFscyIsInJpZCI6ImphaW4uam9zZXBoQGluZmluZW9uLmNvbSIsIkRvYyB2ZXJzaW9uIjoiMi4wLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
 
 
-- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.4 or later (tested with v3.4)
-- Board support package (BSP) minimum required version for: v1.3.0
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.9.0 or later (tested with v3.9.0)
+- Board support package (BSP) minimum required version for: v3.3.0
 - Programming language: C
 - Associated parts: All PSOC&trade; Control C3 MCUs
 
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
-- GNU Arm&reg; Embedded Compiler v11.3.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
+- GNU Arm&reg; Embedded Compiler v14.2.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
 - Arm&reg; Compiler v6.22 (`ARM`)
-- IAR C/C++ Compiler v9.50.2 (`IAR`)
+- IAR C/C++ Compiler v9.70.4 (`IAR`)
 
 
 ## Supported kits (make variable 'TARGET')
 
-- [PSOC&trade; Control C3M5 Evaluation Kit](https://www.infineon.com/KIT_PSC3M5_EVK) (`KIT_PSC3M5_EVK`) – Default value of `TARGET`
+- [PSOC&trade; Control C3M5 Evaluation Kit](https://www.infineon.com/KIT_PSC3M5_EVK) (`KIT_PSC3M5_EVK`)
+- [PSOC&trade; Control C3M6 Evaluation Kit](https://www.infineon.com/KIT_PSC3M6_EVAL) (`KIT_PSC3M6_EVAL`) – Default value of `TARGET`
 
 
 ## Hardware setup
@@ -35,11 +77,12 @@ This example uses the board's default configuration. See the kit user guide to e
 
 **Table 2. Jumper connections for PWM gate kill**
 
-> **Note:** Connect the LPCOMP +ve pin to VCC for PWM gate kill test
+> **Note:** Connect the LPCOMP +ve pin to HDR_3V3 available at multiple locations for PWM gate kill test. (On KIT_PSC3M5_EVK and KIT_PSC3M6_EVAL has a pull up resistor connected on the board which passes the test without any external connection)
 
  BSP            | LPCOMP +ve pin 
  -------------- | ------  
- KIT_PSC3M5_EVK | P8.0 
+ KIT_PSC3M5_EVK | P8.0 (LPCOMP +ve pin = J5 pin 19)
+ KIT_PSC3M6_EVAL| P8.0 (LPCOMP +ve pin = J20 pin 15)
 
 
 ## Software setup
@@ -195,7 +238,7 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
       ```
    </details>
 
-4. After programming, the application starts automatically. Confirm that **Class-B Safety Test: TCPWM peripheral** is displayed on the UART terminal.
+4. After programming, the application starts automatically. Confirm that **CLass-B: TCPWM Safety Test** is displayed on the UART terminal.
 
 
    **Figure 1. Terminal output on program startup**
@@ -247,10 +290,11 @@ The example starts by initializing the BSP configuration according to the design
      - The on/off ratio is then calculated and checked if it falls within the expected threshold.
 
    - **Command `3` - PWM gate kill test**:
-     - The kill mode of the TCPWM block is configured as **stop on kill**.
-     - For PSOC&trade; Control C3 MCUs, the low-power comparator output is routed to the kill signal of TCPWM, indicating overvoltage/overcurrent condition if the voltage on the positive terminal is greater than the voltage on the negative terminal.
-     - If an overvoltage/overcurrent condition occurs, it kills the PWM output. The TCPWM base and counter number are passed to check whether the counter has stopped or not.
-     - If the counter is not incrementing or decrementing, the PWM output is inactive as the PWM is killed.
+       - The test configures Kill mode of the TCPWM block as `Stop on Kill`.
+       - The low-power comparator output is routed to the kill signal of TCPWM.
+       - If the voltage on the positive terminal is greater than the voltage on the negative terminal, it will kill the PWM output.
+       - The TCPWM base and CntNum are passed to check whether the counter is stopped or not.
+       - If the counter is not incrementing or decrementing, it is assumed that the PWM output is inactive and the PWM is killed. This test has limited scope since it only checks the counter value. It is recommended to create an application-level self-test to check the PWM pin state.
 
 This example utilizes the TCPWM block of PSOC&trade; Control C3 MCUs to conduct comprehensive testing. The custom *design.modus* file with minimal configuration changes is shipped with the code example for the respective kits.
 
@@ -278,7 +322,7 @@ By executing these tests, the example ensures the proper functioning of the TCPW
 
 Resources  | Links
 -----------|----------------------------------
-Application notes  | [AN238329](https://www.infineon.com/AN238329) – Getting started with PSOC&trade; Control C3 MCU on ModusToolbox&trade; software <br>
+Application notes  | [AN238329](https://www.infineon.com/content/dam/infineon/row/public/documents/30/42/infineon-an238329-getting-started-psoc-control-c3-modustoolbox-applicationnotes-en.pdf) – Getting started with PSOC&trade; Control C3 MCU on ModusToolbox&trade; software <br>
 Code examples  | [Using ModusToolbox&trade;](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software) on GitHub
 Device documentation | [PSOC&trade; Control C3 MCU datasheets](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/psoc-control-c3p/#!documents) <br> [PSOC&trade; Control C3 technical reference manuals](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/psoc-control-c3p/#!documents)
 Development kits | Select your kits from the [Evaluation Board Finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board) page.
@@ -300,20 +344,38 @@ Document title: *CE241078* – *Class-B Safety Test for PSOC&trade; Control MCU:
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
+ 1.0.1   | Readme update
+ 1.0.2   | Documentation update
+ 2.0.0   | Migrate CE to KIT_PSC3M5_EVK 3.x ; Added support for the KIT_PSC3M6_EVAL board
 
-<br>
-
-
-
-All referenced product or service names and trademarks are the property of their respective owners.
-
-The Bluetooth&reg; word mark and logos are registered trademarks owned by Bluetooth SIG, Inc., and any use of such marks by Infineon is under license.
+All referenced product or service names and trademarks are the property of
+their respective owners.
 
 
 ---------------------------------------------------------
 
-© Cypress Semiconductor Corporation, 2024-2025. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
+(c) 2026, Infineon Technologies AG, or an affiliate of Infineon Technologies
+AG. All rights reserved.
+This software, associated documentation and materials ("Software") is owned by
+Infineon Technologies AG or one of its affiliates ("Infineon") and is protected
+by and subject to worldwide patent protection, worldwide copyright laws, and
+international treaty provisions. Therefore, you may use this Software only as
+provided in the license agreement accompanying the software package from which
+you obtained this Software. If no license agreement applies, then any use,
+reproduction, modification, translation, or compilation of this Software is
+prohibited without the express written permission of Infineon.
 <br>
-TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  No computing device can be absolutely secure.  Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach").  Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach.  In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes.  It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product.  "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage.  Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices.  "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness.  Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, including its affiliates, and its directors, officers, employees, agents, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
-<br>
-Cypress, the Cypress logo, and combinations thereof, ModusToolbox, PSOC, CAPSENSE, EZ-USB, F-RAM, and TRAVEO are trademarks or registered trademarks of Cypress or a subsidiary of Cypress in the United States or in other countries. For a more complete list of Cypress trademarks, visit www.infineon.com. Other names and brands may be claimed as property of their respective owners.
+Disclaimer: UNLESS OTHERWISE EXPRESSLY AGREED WITH INFINEON, THIS SOFTWARE IS
+PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, ALL WARRANTIES OF NON-INFRINGEMENT OF THIRD-PARTY RIGHTS
+AND IMPLIED WARRANTIES SUCH AS WARRANTIES OF FITNESS FOR A SPECIFIC USE/PURPOSE
+OR MERCHANTABILITY. Infineon reserves the right to make changes to the Software
+without notice. You are responsible for properly designing, programming, and
+testing the functionality and safety of your intended application of the
+Software, as well as complying with any legal requirements related to its use.
+Infineon does not guarantee that the Software will be free from intrusion, data
+theft or loss, or other breaches ("Security Breaches"), and Infineon shall have
+no liability arising out of any Security Breaches. Unless otherwise explicitly
+approved by Infineon, the Software may not be used in any application where a
+failure of the Product or any consequences of the use thereof can reasonably be
+expected to result in personal injury.

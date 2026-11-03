@@ -8,36 +8,7 @@
 *
 *
 *******************************************************************************
-* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
-* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
-*
-* This software, including source code, documentation and related
-* materials ("Software") is owned by Cypress Semiconductor Corporation
-* or one of its affiliates ("Cypress") and is protected by and subject to
-* worldwide patent protection (United States and foreign),
-* United States copyright laws and international treaty provisions.
-* Therefore, you may use this Software only as provided in the license
-* agreement accompanying the software package from which you
-* obtained this Software ("EULA").
-* If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
-* non-transferable license to copy, modify, and compile the Software
-* source code solely for use in connection with Cypress's
-* integrated circuit products.  Any reproduction, modification, translation,
-* compilation, or representation of this Software except as specified
-* above is prohibited without the express written permission of Cypress.
-*
-* Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
-* EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
-* reserves the right to make changes to the Software without notice. Cypress
-* does not assume any liability arising out of the application or use of the
-* Software or any product or circuit described in the Software. Cypress does
-* not authorize its products for use in any products where a malfunction or
-* failure of the Cypress product may reasonably be expected to result in
-* significant property damage, injury or death ("High Risk Product"). By
-* including Cypress's product in a High Risk Product, the manufacturer
-* of such system or application assumes all risk of such use and in doing
-* so agrees to indemnify Cypress against all liability.
+* $ Copyright 2026 Infineon Technologies AG $
 *******************************************************************************/
 
 
@@ -50,7 +21,6 @@
 #include "cy_retarget_io.h"
 #include "mtb_hal.h"
 #include "SelfTest.h"
-#include <math.h>
 
 /*******************************************************************************
 * Macros
@@ -292,13 +262,15 @@ void pwm_test(void)
 ********************************************************************************
 * Summary:
 * The function configures Kill mode of the TCPWM block as `Stop on Kill. The
-* low-power comparator output is routed to the Kill signal of TCPWM indicating
-* overvoltage/overcurrent condition if the voltage on the positive terminal is
-* greater than the voltage on the negative terminal. If an overvoltage or
-* overcurrent condition occurs, then it will Kill the PWM output. The TCPWM base
-* and CntNum are passed to check whether the counter is stopped or not. If the
-* counter is not incrementing/decrementing, the PWM output is inactive that the
-* PWM is killed.
+* low-power comparator output is routed to the Kill signal of TCPWM.
+* If the voltage on the positive terminal is greater than the voltage on the
+* negative terminal, it will kill the PWM output.
+* The TCPWM base and CntNum are passed to check whether
+* the counter is stopped or not. If the counter is not incrementing or
+* decrementing, it is assumed that the PWM output is inactive and the PWM
+* is killed. This test has limited scope since it only checks the counter
+* value. It is recommended to create an application-level self-test to
+* check the PWM pin state.
 *
 * Parameters:
 *  none
@@ -309,7 +281,10 @@ void pwm_test(void)
 void pwm_gate_kill(void)
 {
     /* Initializes low-power comparator */
+    Cy_TCPWM_PWM_Disable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
     Cy_LPComp_Init_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &LPCOMP_config,&context);
+    Cy_LPComp_SetInputs(LPCOMP_HW, LPCOMP_CHANNEL, CY_LPCOMP_SW_GPIO, CY_LPCOMP_SW_LOCAL_VREF);
+    Cy_LPComp_UlpReferenceEnable(LPCOMP_HW);
 
     /* Configure the TCPWM for PWM operation. */
      api_status = Cy_TCPWM_PWM_Init(CYBSP_PWM_GATEKILL_HW,
@@ -324,16 +299,40 @@ void pwm_gate_kill(void)
     /* TCPWM enable */
     Cy_TCPWM_PWM_Enable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
 
-    /* Apply higher voltage to the LPCOMP +ve pin, will kill the PWM */
-    Cy_LPComp_Enable_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &context);
+    /* Start trigger to TCPWM */
+    Cy_TCPWM_TriggerReloadOrIndex_Single(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
 
+    if (OK_STATUS == SelfTest_PWM_GateKill(CYBSP_PWM_GATEKILL_HW,
+            CYBSP_PWM_GATEKILL_NUM))
+    {
+        printf("Error: PWM GateKill precondition fail - PWM counter is not running\r\n");
+        Cy_TCPWM_PWM_Disable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
+        return;
+    }
+
+    /* Power up the comparator with the PWM running. A rising edge on the
+     * comparator output (P8.0 above the reference) kills the counter. */
+    Cy_LPComp_Enable_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &context);
+    Cy_SysLib_Delay(1);
+
+    /* The power-up transient can kill the counter even though the settled
+     * output is low. Clear such a false kill so only a real high on P8.0
+     * leaves the counter stopped. */
+    if (0UL == Cy_LPComp_GetCompare(LPCOMP_HW, LPCOMP_CHANNEL))
+    {
+        Cy_TCPWM_PWM_Disable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
+        Cy_TCPWM_PWM_Enable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
+        Cy_TCPWM_TriggerReloadOrIndex_Single(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
+        Cy_SysLib_DelayUs(100);
+    }
+    
     /* Run PWM GateKill Self Test... */
     if (OK_STATUS != SelfTest_PWM_GateKill(CYBSP_PWM_GATEKILL_HW,
             CYBSP_PWM_GATEKILL_NUM))
     {
         /* Process error */
         printf("Error: PWM GateKill fail\r\n");
-        printf("Ensure LPCOMP +ve pin is connected to VCC -"
+        printf("Ensure LPCOMP +ve pin is connected to VDD -"
                 " Refer Hardware setup section in Readme\r\n");
     }
     else
@@ -341,6 +340,9 @@ void pwm_gate_kill(void)
         /* Process success */
         printf("Success: PWM GateKill pass\r\n");
     }
+
+    Cy_LPComp_Disable_Ext(LPCOMP_HW, LPCOMP_CHANNEL, &context);
+    Cy_TCPWM_PWM_Disable(CYBSP_PWM_GATEKILL_HW, CYBSP_PWM_GATEKILL_NUM);
 }
 
 /* [] END OF FILE */
